@@ -1,0 +1,52 @@
+version: '2'
+services:
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080
+  mariadb:
+    # 5.X太舊了
+    #image: 'docker.io/bitnami/mariadb:5.5.48-0-r01'
+    image: 'bitnami/mariadb:10.2'
+    volumes:
+      - 'mariadb_data:/bitnami/mariadb'
+      - './csie.sql:/docker-entrypoint-initdb.d/csie.sql:rw'
+    environment:
+      - MARIADB_USER=csie
+      - MARIADB_DATABASE=csie
+      - MARIADB_PASSWORD=nuuCSIE406
+      - MARIADB_ROOT_PASSWORD=nuuCSIE406
+  wordpress:
+    image: 'docker.io/bitnami/wordpress:5.5.3'
+    expose:
+      - '8080'
+      - '8443'
+    #ports:
+    #  - '80:8080'
+    #  - '443:8443'
+    volumes:
+      - 'wordpress_data:/bitnami/wordpress'
+      - './csie_20210306.tar:/opt/bitnami/wordpress/csie_20210306.tar:rw'
+    depends_on:
+      - mariadb
+    environment:
+      # 特殊設定(之前教你的那個反向代理) 反向代理
+      - VIRTUAL_HOST=lab174.406.csie.nuu.edu.tw
+      - VIRTUAL_PORT=8443
+      - VIRTUAL_PROTO=https
+      - LETSENCRYPT_HOST=lab174.406.csie.nuu.edu.tw
+      - LETSENCRYPT_EMAIL=m0724001@gm.nuu.edu.tw
+      # Wordpress環境
+      - MARIADB_HOST=mariadb
+      - MARIADB_PORT_NUMBER=3306
+      - WORDPRESS_DATABASE_NAME=csie
+      - WORDPRESS_DATABASE_USER=csie
+      - WORDPRESS_DATABASE_PASSWORD=nuuCSIE406
+      # 因為有現成資料
+      - WORDPRESS_SKIP_INSTALL=yes
+volumes:
+  mariadb_data:
+    driver: local
+  wordpress_data:
+    driver: local
